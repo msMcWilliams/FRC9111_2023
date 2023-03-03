@@ -43,22 +43,22 @@ import java.util.Set;
  */
 public class Robot extends TimedRobot {
   private final CANSparkMax m_leadMotorleft = new CANSparkMax(1, MotorType.kBrushed);
-   private final PWMSparkMax m_shoulder_lead = new PWMSparkMax(8);
-  private final PWMSparkMax m_shoulder_follow = new PWMSparkMax(9);
+  private final CANSparkMax m_shoulder_lead = new CANSparkMax(6, MotorType.kBrushed);
+  private final CANSparkMax m_shoulder_follow = new CANSparkMax(7, MotorType.kBrushed);
   private final CANSparkMax m_followMotorleft = new CANSparkMax(3, MotorType.kBrushed);
   private final CANSparkMax m_leadMotorright = new CANSparkMax(2, MotorType.kBrushed);
   private final CANSparkMax m_followMotorright = new CANSparkMax(4, MotorType.kBrushed);
   private final DifferentialDrive m_robotDrive = new DifferentialDrive(m_leadMotorleft, m_leadMotorright);
   private final XboxController m_controller = new XboxController(0);
   private final Timer m_timer = new Timer();
- private MotorControllerGroup shoulders = new MotorControllerGroup(m_shoulder_lead, m_shoulder_follow );
+ //private MotorControllerGroup shoulders = new MotorControllerGroup(m_shoulder_lead, m_shoulder_follow );
  private final Pose2d m_autoStartPose = new Pose2d();
  private final double m_autoDriveTime_sec = 2.0;
  private final double m_autoDriveSpeed_mps = 1.0;
  
  //pneumatics
-  private final Compressor comp = new Compressor(PneumaticsModuleType.REVPH);
-  private final DoubleSolenoid solenoid = new DoubleSolenoid(PneumaticsModuleType.REVPH, 0, 1);
+  private final Compressor comp = new Compressor(6,PneumaticsModuleType.REVPH);
+  private final DoubleSolenoid solenoid = new DoubleSolenoid(6,PneumaticsModuleType.REVPH, 0, 1); //first parameter is teh CAN id
 
  Thread m_visionThread;
 
@@ -74,13 +74,20 @@ public class Robot extends TimedRobot {
     // m_leadMotorleft.restoreFactoryDefaults();
     // m_leadMotorright.restoreFactoryDefaults();
 
-    solenoid.set(DoubleSolenoid.Value.kReverse);
+  comp.enableDigital();
+   
+  boolean pressureSwitch = comp.getPressureSwitchValue();
+  double current = comp.getCurrent();
+  SmartDashboard.putNumber("Compresser Current", current);
+  SmartDashboard.putBoolean("preasureSwitch", pressureSwitch);
 
   //Syncs the left side of the motors with one another
   m_followMotorleft.follow(m_leadMotorleft);
 
   // Syncs the right side of the motors with one another
   m_followMotorright.follow(m_leadMotorright);
+
+  m_shoulder_follow.follow(m_shoulder_lead);
 
 // Code for camera to recogize/read apriltags 
   m_visionThread =
@@ -220,14 +227,7 @@ m_visionThread.start();
     System.out.println("Starting teleop");
     //m_leadMotorleft.set(.5);
    // m_leadMotorright.set(.5);
-   comp.enableDigital();
-   comp.disable();
-
-  comp.enableAnalog(40, 120);
-  boolean pressureSwitch = comp.getPressureSwitchValue();
-  double current = comp.getCurrent();
-  SmartDashboard.putNumber("Compresser Current", current);
-  SmartDashboard.putBoolean("preasureSwitch", pressureSwitch);
+   
   }
 
   /** This function is called periodically during teleoperated mode. */
@@ -235,11 +235,13 @@ m_visionThread.start();
   @Override
   public void teleopPeriodic() {
    SmartDashboard.putNumber("right joystick", m_controller.getRightY());
-   SmartDashboard.putNumber("PWM", m_shoulder_lead.get());
-    m_shoulder_lead.set (m_controller.getRightY());
-    shoulders.set (m_controller.getRightY());
+   //SmartDashboard.putNumber("PWM", m_shoulder_lead.get());
+   // m_shoulder_lead.set (m_controller.getRightY());
+   // shoulders.set (m_controller.getRightY());
     // Uses the x postion (x-axis) to go left and right and uses the y positiion (y-axis) to go up and down.
  m_robotDrive.arcadeDrive(-m_controller.getLeftX()*.7, -m_controller.getLeftY()*.7);
+
+m_shoulder_lead.set(m_controller.getRightY());
 
  if (m_controller.getRightBumperPressed()){
 
