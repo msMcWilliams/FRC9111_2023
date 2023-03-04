@@ -62,6 +62,8 @@ public class Robot extends TimedRobot {
 
  Thread m_visionThread;
 
+private boolean handopen;
+
  /**
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
@@ -75,7 +77,7 @@ public class Robot extends TimedRobot {
     // m_leadMotorright.restoreFactoryDefaults();
 
   comp.enableDigital();
-   
+  handopen = false;
   boolean pressureSwitch = comp.getPressureSwitchValue();
   double current = comp.getCurrent();
   SmartDashboard.putNumber("Compresser Current", current);
@@ -230,6 +232,7 @@ m_visionThread.start();
    
   }
 
+
   /** This function is called periodically during teleoperated mode. */
   //Display right joystick value
   @Override
@@ -243,13 +246,19 @@ m_visionThread.start();
 
 m_shoulder_lead.set(m_controller.getRightY());
 
- if (m_controller.getRightBumperPressed()){
+if (m_controller.getXButton())
+ 
+  if (handopen){
 
- solenoid.set(DoubleSolenoid.Value.kForward);
- }
- else if (m_controller.getLeftBumperPressed()) {
-  solenoid.set(DoubleSolenoid.Value.kReverse);}
-  }
+    solenoid.set(DoubleSolenoid.Value.kReverse);}
+
+  else 
+  
+    solenoid.set(DoubleSolenoid.Value.kForward);
+
+}
+
+
   /** This function is called once each time the robot enters test mode. */
   @Override
   public void testInit() {}
